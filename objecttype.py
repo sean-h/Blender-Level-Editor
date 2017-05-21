@@ -4,20 +4,11 @@ import os
 import copy
 import math
 from .prefab import Prefab
-
-def CreateTriggerMaterial():
-    mat = bpy.data.materials.get("Trigger")
-    if mat == None:
-        bpy.data.materials.new("Trigger")
-        mat = bpy.data.materials.get("Trigger")
-        mat.diffuse_color = [0.0, 0.8, 0.0]
-        mat.use_shadeless = True
-        mat.use_transparency = True
-        mat.alpha = 0.5
+from .trigger import Trigger
 
 def LevelPropertyTypeChanged(self, context):
     # Reset material
-    CreateTriggerMaterial()
+    
     mat = bpy.data.materials.get("Material")
     self.show_transparent = False
     self.show_wire = False
@@ -28,13 +19,7 @@ def LevelPropertyTypeChanged(self, context):
         self.data.materials.append(mat)
     
     if self.ObjectType == "Trigger":
-        mat = bpy.data.materials.get("Trigger")
-        self.show_transparent = True
-        self.show_wire = True
-        if self.data.materials:
-            self.data.materials[0] = mat
-        else:
-            self.data.materials.append(mat)
+        Trigger.set_object_as_trigger(self)
     
     return None
 
@@ -65,27 +50,6 @@ bpy.types.Object.door_open_direction = bpy.props.FloatVectorProperty(
     default=(0.0,1.0,0.0),
     step=10,
     precision=2
-)
-
-def AddToTargets(self, context):
-    if self.TriggerTarget != "":
-        if len(self.TriggerTargets) > 0:
-            self.TriggerTargets = self.TriggerTargets + ";" + self.TriggerTarget
-        else:
-            self.TriggerTargets = self.TriggerTarget
-        self.TriggerTarget = ""
-
-bpy.types.Object.TriggerTarget = bpy.props.StringProperty(
-    name="Target",
-    description="Target Object",
-    default="",
-    update = AddToTargets
-)
-
-bpy.types.Object.TriggerTargets = bpy.props.StringProperty(
-    name="Targets",
-    description="Target Object",
-    default=""
 )
 
 bpy.types.Object.PushDirection = bpy.props.FloatVectorProperty(
@@ -133,16 +97,27 @@ class LevelPropertiesMenu(bpy.types.Panel):
             elif active_object.ObjectType == "Trigger":
                 layout.prop_search(active_object, "TriggerTarget", scene, "objects")
                 layout.prop(active_object, "TriggerTargets", text="Targets")
+
+                row = layout.row()
+                row.template_list("TargetList", "", active_object, "TargetsList", active_object, "SelectedTargetIndex")
+                col = row.column(align=True)
+                col.operator("object.target_list_action", icon='ZOOMIN', text="").action = 'ADD'
+                col.operator("object.target_list_action", icon='ZOOMOUT', text="").action = 'REMOVE'
+                col.separator()
+                col.operator("object.target_list_action", icon='TRIA_UP', text="").action = 'UP'
+                col.operator("object.target_list_action", icon='TRIA_DOWN', text="").action = 'DOWN'
             elif active_object.ObjectType == "Push":
                 layout.prop(active_object, "PushObjectType", text="Push Object Type")
                 layout.prop(active_object, "PushDirection", text="Push Direction")
                 layout.prop(active_object, "PushDistance", text="Push Distance")
             elif active_object.ObjectType == "Prefab":
-                layout.operator("object.create_prefabs")
+                layout.operator("object.create_prefabs", text="Create Prefabs")
                 layout.prop_search(active_object, "PrefabName", scene, "Prefabs")
         
     def register():
         Prefab.register()
+        Trigger.register()
     
     def unregister():
         Prefab.unregister()
+        Trigger.unregister()
