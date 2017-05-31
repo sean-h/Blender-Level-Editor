@@ -1,4 +1,5 @@
 import bpy
+import sys
 
 class TargetList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
@@ -129,3 +130,4 @@ class Trigger():
         bpy.utils.unregister_class(TargetList)
         bpy.utils.unregister_class(TriggerTargetPropertyGroup)
         bpy.utils.unregister_class(TargetList_actions)
+        del sys.modules['LevelEditor.trigger']

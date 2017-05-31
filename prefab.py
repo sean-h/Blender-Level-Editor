@@ -1,6 +1,6 @@
 import bpy, bmesh, mathutils
 import json
-import os
+import os, sys
 import copy
 import math
 import pdb
@@ -72,13 +72,48 @@ def ChangePrefab(self, context):
         m = bpy.data.meshes.new(self.PrefabName)
         merged_mesh.to_mesh(m)
         self.data = m
+
+        bpy.ops.object.mode_set(mode='EDIT')
+        bm = bmesh.from_edit_mesh(self.data)
+
+        origin_vertex = bm.verts.new((0.0, 0.0, 0.0))
+        x_vertex = bm.verts.new((1.0, 0.0, 0.0))
+        y_vertex = bm.verts.new((0.0, -1.0, 0.0))
+        z_vertex = bm.verts.new((0.0, 0.0, 1.0))
+
+        bm.verts.ensure_lookup_table()
+
+        # Add edges
+        bm.edges.new((origin_vertex, x_vertex))
+        bm.edges.new((origin_vertex, y_vertex))
+        bm.edges.new((origin_vertex, z_vertex))
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+
+        if self.vertex_groups.find('Origin') == -1:
+            self.vertex_groups.new('Origin')
+        self.vertex_groups['Origin'].add([len(self.data.vertices)-4], 1.0, 'ADD')
+
+        if self.vertex_groups.find('X') == -1:
+            self.vertex_groups.new('X')
+        self.vertex_groups['X'].add([len(self.data.vertices)-3], 1.0, 'ADD')
+
+        if self.vertex_groups.find('Y') == -1:
+            self.vertex_groups.new('Y')
+        self.vertex_groups['Y'].add([len(self.data.vertices)-2], 1.0, 'ADD')
+
+        if self.vertex_groups.find('Z') == -1:
+            self.vertex_groups.new('Z')
+        self.vertex_groups['Z'].add([len(self.data.vertices)-1], 1.0, 'ADD')
+        
+        
             
         objects_after_import = set()
         for object in bpy.context.scene.objects:
             objects_after_import.add(object.name)
 
         #Delete imported objects
-        print('Delete')
         bpy.ops.object.select_all(action='DESELECT')
         for object in objects_after_import - objects_before_import:
             bpy.data.objects[object].select = True
@@ -149,3 +184,4 @@ class Prefab:
         bpy.utils.unregister_class(MeshPropertyGroup)
         bpy.utils.unregister_class(PrefabPropertyGroup)
         bpy.utils.unregister_class(CreatePrefabs)
+        del sys.modules['LevelEditor.prefab']

@@ -10,12 +10,18 @@ bl_info = {
 }
 
 import bpy
+import sys
 from .objecttype import LevelPropertiesMenu
+from .level import Level
+from .brush import Brush
 
 def register():
-    print(register)
-    #bpy.utils.unregister_class(LevelPropertiesMenu)
+    bpy.utils.register_class(Level)
+    Brush.register()
     bpy.utils.register_class(LevelPropertiesMenu)
 
 def unregister():
     bpy.utils.unregister_class(LevelPropertiesMenu)
+    Brush.unregister()
+    bpy.utils.unregister_class(Level)
+    del sys.modules['LevelEditor']

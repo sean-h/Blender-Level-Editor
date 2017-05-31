@@ -1,6 +1,6 @@
 import bpy, bmesh, mathutils
 import json
-import os
+import os, sys
 import copy
 import math
 from .prefab import Prefab
@@ -13,6 +13,8 @@ def LevelPropertyTypeChanged(self, context):
     self.show_transparent = False
     self.show_wire = False
     self.show_axis = False
+    self.ExportObject = True
+
     if self.data.materials:
         self.data.materials[0] = mat
     else:
@@ -20,6 +22,8 @@ def LevelPropertyTypeChanged(self, context):
     
     if self.ObjectType == "Trigger":
         Trigger.set_object_as_trigger(self)
+    elif self.ObjectType == 'Prefab':
+        self.ExportObject = False
     
     return None
 
@@ -30,12 +34,18 @@ bpy.types.Object.ObjectType = bpy.props.EnumProperty(
         ("Trigger", "Trigger", "trigger volume"),
         ("Push", "Push", "push object"),
         ("Prefab", "Prefab", "Prefab object"),
+        ("Brush", "Brush", "Brush"),
         ("None", "None", "no object")
     ],
     name="Object Type",
     description="Type of the selected object",
     default="None",
     update=LevelPropertyTypeChanged
+)
+
+bpy.types.Object.ExportObject = bpy.props.BoolProperty(
+    name="Export Object",
+    default=False
 )
 
 bpy.types.Object.door_open_speed = bpy.props.FloatProperty(
@@ -83,7 +93,10 @@ class LevelPropertiesMenu(bpy.types.Panel):
         layout = self.layout
         
         row = layout.row()
-        row.label(text="Test", icon="OBJECT_DATA")
+        active_object_name = 'None'
+        if bpy.context.active_object != None:
+            active_object_name = bpy.context.active_object.name
+        row.label(text=active_object_name, icon="OBJECT_DATA")
         
         scene = bpy.context.scene
         
@@ -113,6 +126,8 @@ class LevelPropertiesMenu(bpy.types.Panel):
             elif active_object.ObjectType == "Prefab":
                 layout.operator("object.create_prefabs", text="Create Prefabs")
                 layout.prop_search(active_object, "PrefabName", scene, "Prefabs")
+            elif active_object.ObjectType == 'Brush':
+                layout.prop(active_object, "BrushType", text="Brush Type")
         
     def register():
         Prefab.register()
@@ -121,3 +136,4 @@ class LevelPropertiesMenu(bpy.types.Panel):
     def unregister():
         Prefab.unregister()
         Trigger.unregister()
+        del sys.modules['LevelEditor.objecttype']
