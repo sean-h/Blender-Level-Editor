@@ -2,6 +2,7 @@ import bpy
 import sys
 from mathutils import Vector, Matrix
 import pdb
+import math
 
 def assign_brush_vertex_colors():
     sectors = []
@@ -12,7 +13,6 @@ def assign_brush_vertex_colors():
     for i, sector_name in enumerate(sectors):
         sector = bpy.data.objects[sector_name]
         sector_num = i
-        pdb.set_trace()
         col = (sector_num // 400 * 0.05, sector_num // 20 * 0.05, sector_num % 20 * 0.05)
         
         if 'Col' not in sector.data.vertex_colors.keys():
@@ -28,13 +28,13 @@ def assign_brush_vertex_colors():
         sector.data.vertex_colors['White'].active = True
 
 def color_compare(c1, c2):
-    #return abs(c1[0] - c2[0]) <= 0.02 and abs(c1[1] - c2[1]) <= 0.02 and abs(c1[2] - c2[2]) <= 0.02
     c1_255 = (math.floor(c1[0] * 255), math.floor(c1[1] * 255), math.floor(c1[2] * 255))
     c2_255 = (math.floor(c2[0] * 255), math.floor(c2[1] * 255), math.floor(c2[2] * 255))
+    return abs(c1_255[0] - c2_255[0]) <= 1 and abs(c1_255[1] - c2_255[1]) <= 1 and abs(c1_255[2] - c2_255[2]) <= 1
 
 def separate_sectors():
     
-    sectors = {k: v for k, v in bpy.data.objects.items() if v.BrushType != 'None'}
+    sectors = {k: v for k, v in bpy.data.objects.items() if v.ObjectType == 'Brush' and v.BrushType == 'Sector'}
     map = bpy.data.objects[bpy.context.scene.LevelName]
 
     bpy.ops.object.select_all(action='DESELECT')
@@ -48,6 +48,12 @@ def separate_sectors():
         bpy.ops.object.select_all(action='DESELECT')
         map.select = True
         bpy.context.scene.objects.active = map
+
+        bpy.ops.object.mode_set(mode = 'EDIT')
+        bpy.ops.mesh.select_mode(type='VERT')
+        bpy.ops.mesh.select_all(action = 'DESELECT')
+        bpy.ops.object.mode_set(mode = 'OBJECT')
+
         mesh = map.data
         color_layer = mesh.vertex_colors['Col']
         tk = {}
@@ -57,35 +63,36 @@ def separate_sectors():
                 loop = mesh.loops[idx]
                 v = loop.vertex_index
                 linked = tk.get(v, [])
-                linked.append(color_layer.data[i].color)
+                linked.append(color_layer.data[idx].color)
                 tk[v] = linked
                 i += 1
         
         color = bpy.data.objects[sector].data.vertex_colors['Col'].data[0].color
-        
-        bpy.ops.object.mode_set(mode = 'EDIT') 
-        bpy.ops.mesh.select_mode(type='VERT')
-        bpy.ops.mesh.select_all(action = 'DESELECT')
-        bpy.ops.object.mode_set(mode = 'OBJECT')
-        
         select_count = 0
         for i, v in tk.items():
             for c in v:
                 if color_compare(c, color):
                     map.data.vertices[i].select = True
                     select_count += 1
-                    break        
-            
+                    break
+
         if select_count > 0:
             bpy.ops.object.mode_set(mode = 'EDIT')
             objects_before_separate = set(bpy.data.objects.keys())
+            bpy.ops.mesh.duplicate()
             bpy.ops.mesh.separate(type='SELECTED')
             objects_after_separate = set(bpy.data.objects.keys())
             new_object = objects_after_separate.difference(objects_before_separate).pop()
             bpy.data.objects[new_object].ExportObject = True
             bpy.data.objects[new_object].name = map.name + '.' + sector
 
+    map.select = True
+    bpy.context.scene.objects.active = map
     bpy.ops.object.mode_set(mode = 'OBJECT')
+    bpy.ops.object.select_all(action='DESELECT')
+    map.select = True
+    bpy.context.scene.objects.active = map
+    bpy.ops.object.delete()
 
     split_sectors = {k: v for k, v in bpy.data.objects.items() if v.name.startswith(bpy.context.scene.LevelName)}
 
@@ -94,6 +101,8 @@ def separate_sectors():
         if len(bpy.data.objects[sector].data.vertices) == 0:
             continue
 
+        bpy.data.objects[sector].select = True
+        bpy.context.scene.objects.active = bpy.data.objects[sector]
         bpy.ops.object.mode_set(mode = 'OBJECT')
         bpy.ops.object.select_all(action='DESELECT')
         bpy.data.objects[sector].select = True
@@ -105,6 +114,9 @@ def separate_sectors():
         
         for uv_face in  bpy.data.objects[sector].data.uv_textures.active.data:
             uv_face.image = bpy.data.images['UV_Grid']
+
+        bpy.ops.object.mode_set(mode = 'OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
 
     bpy.ops.object.mode_set(mode = 'OBJECT')
 
