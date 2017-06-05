@@ -160,6 +160,12 @@ class BuildLevel(bpy.types.Operator):
         sector_brushes.remove(sector_brushes[0])
         
         for brush in sector_brushes:
+            # Add sector's materials to map
+            for material_slot in brush.material_slots:
+                if map.material_slots.find(material_slot.material.name) == -1:
+                    bpy.ops.object.material_slot_add()
+                    map.material_slots[''].material = bpy.data.materials[material_slot.material.name]
+
             bool_mod = map.modifiers.new(name=brush.name, type="BOOLEAN")
             bool_mod.object = brush
             bool_mod.operation = "UNION"

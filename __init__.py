@@ -14,14 +14,17 @@ import sys
 from .objecttype import LevelPropertiesMenu
 from .level import Level
 from .brush import Brush
+from .materialpainter import MaterialPainter
 
 def register():
     bpy.utils.register_class(Level)
     Brush.register()
     bpy.utils.register_class(LevelPropertiesMenu)
+    bpy.utils.register_class(MaterialPainter)
 
 def unregister():
     bpy.utils.unregister_class(LevelPropertiesMenu)
     Brush.unregister()
     bpy.utils.unregister_class(Level)
+    bpy.utils.unregister_class(MaterialPainter)
     del sys.modules['LevelEditor']
