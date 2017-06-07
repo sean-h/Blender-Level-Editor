@@ -25,5 +25,11 @@ class Brush:
             update=change_brush_type
         )
 
+        bpy.types.Object.BrushBuildOrder = bpy.props.IntProperty(
+            name="Brush Build Order",
+            description="Order to add brush to map when building level",
+            default=10
+        )
+
     def unregister():
         del sys.modules['LevelEditor.brush']

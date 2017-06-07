@@ -128,6 +128,7 @@ class LevelPropertiesMenu(bpy.types.Panel):
                 layout.prop_search(active_object, "PrefabName", scene, "Prefabs")
             elif active_object.ObjectType == 'Brush':
                 layout.prop(active_object, "BrushType", text="Brush Type")
+                layout.prop(active_object, "BrushBuildOrder", text="Brush Build Order")
         
     def register():
         Prefab.register()

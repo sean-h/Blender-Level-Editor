@@ -146,6 +146,8 @@ class BuildLevel(bpy.types.Operator):
         if len(sector_brushes) == 0:
             return {"FINISHED"}
 
+        sector_brushes.sort(key=lambda x: x.BrushBuildOrder)
+
         if bpy.data.meshes.find(scene.LevelName) != -1:
             bpy.data.meshes.remove(bpy.data.meshes[scene.LevelName])
         map = bpy.data.objects.new(scene.LevelName, sector_brushes[0].data)

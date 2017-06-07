@@ -23,8 +23,8 @@ def register():
     bpy.utils.register_class(MaterialPainter)
 
 def unregister():
-    bpy.utils.unregister_class(LevelPropertiesMenu)
-    Brush.unregister()
     bpy.utils.unregister_class(Level)
+    Brush.unregister()
+    bpy.utils.unregister_class(LevelPropertiesMenu)
     bpy.utils.unregister_class(MaterialPainter)
     del sys.modules['LevelEditor']
