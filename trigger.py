@@ -126,6 +126,12 @@ class Trigger():
             step=1
         )
 
+        bpy.types.Object.ActivationText = bpy.props.StringProperty(
+            name="ActivationText",
+            description="Text to display when trigger is activated",
+            default="Trigger Activated"
+        )
+
     def unregister():
         bpy.utils.unregister_class(TargetList)
         bpy.utils.unregister_class(TriggerTargetPropertyGroup)

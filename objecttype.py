@@ -5,6 +5,7 @@ import copy
 import math
 from .prefab import Prefab
 from .trigger import Trigger
+from .stairs import Stairs
 
 def LevelPropertyTypeChanged(self, context):
     # Reset material
@@ -35,6 +36,10 @@ bpy.types.Object.ObjectType = bpy.props.EnumProperty(
         ("Push", "Push", "push object"),
         ("Prefab", "Prefab", "Prefab object"),
         ("Brush", "Brush", "Brush"),
+        ("Water", "Water", "Water"),
+        ("Light", "Light", "Light"),
+        ("ReflectionProbe", "ReflectionProbe", "ReflectionProbe"),
+        ("Stairs", "Stairs", "Stairs"),
         ("None", "None", "no object")
     ],
     name="Object Type",
@@ -119,6 +124,9 @@ class LevelPropertiesMenu(bpy.types.Panel):
                 col.separator()
                 col.operator("object.target_list_action", icon='TRIA_UP', text="").action = 'UP'
                 col.operator("object.target_list_action", icon='TRIA_DOWN', text="").action = 'DOWN'
+
+                layout.prop(active_object, "ActivationText", text="Targets")
+
             elif active_object.ObjectType == "Push":
                 layout.prop(active_object, "PushObjectType", text="Push Object Type")
                 layout.prop(active_object, "PushDirection", text="Push Direction")
@@ -129,12 +137,32 @@ class LevelPropertiesMenu(bpy.types.Panel):
             elif active_object.ObjectType == 'Brush':
                 layout.prop(active_object, "BrushType", text="Brush Type")
                 layout.prop(active_object, "BrushBuildOrder", text="Brush Build Order")
+            elif active_object.ObjectType == 'Stairs':
+                col = layout.column(align=True)
+                col.alert = active_object.UnappliedProperties
+                col.prop(active_object, "StairStepHeight", text="Step Height")
+                col.prop(active_object, "StairStepWidth", text="Step Width")
+                col.prop(active_object, "StairStepDepth", text="Step Depth")
+                col.prop(active_object, "StairStepCount", text="Step Count")
+                col.prop(active_object, "StairSectionNextDirection", text="Next Section Direction")
+                col.operator("object.apply_stair_section_properties", icon='ZOOMOUT', text="Apply")
+
+                row = layout.row()
+                row.template_list("StairSectionList", "", active_object, "StairSectionList", active_object, "SelectedStairSectionIndex")
+                col = row.column(align=True)
+                col.operator("object.stair_section_list_action", icon='ZOOMIN', text="").action = 'ADD'
+                col.operator("object.stair_section_list_action", icon='ZOOMOUT', text="").action = 'REMOVE'
+                col.separator()
+                col.operator("object.stair_section_list_action", icon='TRIA_UP', text="").action = 'UP'
+                col.operator("object.stair_section_list_action", icon='TRIA_DOWN', text="").action = 'DOWN'
         
     def register():
         Prefab.register()
         Trigger.register()
+        Stairs.register()
     
     def unregister():
         Prefab.unregister()
         Trigger.unregister()
+        Stairs.unregister()
         del sys.modules['LevelEditor.objecttype']

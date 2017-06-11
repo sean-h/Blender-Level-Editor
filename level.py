@@ -33,7 +33,6 @@ def color_compare(c1, c2):
     return abs(c1_255[0] - c2_255[0]) <= 1 and abs(c1_255[1] - c2_255[1]) <= 1 and abs(c1_255[2] - c2_255[2]) <= 1
 
 def separate_sectors():
-    
     sectors = {k: v for k, v in bpy.data.objects.items() if v.ObjectType == 'Brush' and v.BrushType == 'Sector'}
     map = bpy.data.objects[bpy.context.scene.LevelName]
 
@@ -182,6 +181,15 @@ class BuildLevel(bpy.types.Operator):
         map.ExportObject = True
 
         separate_sectors()
+
+        # Build stairs
+        for object in scene.objects:
+            if object.ObjectType == 'Stairs':
+                bpy.ops.object.select_all(action='DESELECT')
+                object.select = True
+                scene.objects.active = object
+                bpy.ops.object.build_stairs(name=map.name + '.' + object.name)                
+
 
         return {"FINISHED"}
 

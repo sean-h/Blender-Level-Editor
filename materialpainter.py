@@ -1,6 +1,7 @@
 import bpy
 import json
 import os
+import sys
 
 class ImportMaterials(bpy.types.Operator):
     bl_idname = "scene.import_materials"
