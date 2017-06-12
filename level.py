@@ -188,7 +188,7 @@ class BuildLevel(bpy.types.Operator):
                 bpy.ops.object.select_all(action='DESELECT')
                 object.select = True
                 scene.objects.active = object
-                bpy.ops.object.build_stairs(name=map.name + '.' + object.name)                
+                bpy.ops.object.build_stairs(name=scene.LevelName + '.' + object.name)                
 
 
         return {"FINISHED"}
