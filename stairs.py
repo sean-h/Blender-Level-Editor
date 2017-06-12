@@ -68,27 +68,18 @@ class StairSectionList_actions(bpy.types.Operator):
     def invoke(self, context, event):
         current_index = context.active_object.SelectedStairSectionIndex
 
-        try:
-            item = context.active_object.StairSectionList[current_index]
-        except IndexError:
-            pass
-
-        else:
-            if self.action == 'DOWN' and current_index < len(context.active_object.StairSectionList) - 1:
-                item_next = context.active_object.StairSectionList[current_index+1].name
-                context.active_object.SelectedStairSectionIndex += 1
-
-            elif self.action == 'UP' and current_index >= 1:
-                item_next = context.active_object.StairSectionList[current_index-1].name
+        if self.action == 'DOWN' and current_index < len(context.active_object.StairSectionList) - 1:
+            item_next = context.active_object.StairSectionList[current_index+1].name
+            context.active_object.SelectedStairSectionIndex += 1
+        elif self.action == 'UP' and current_index >= 1:
+            item_next = context.active_object.StairSectionList[current_index-1].name
+            context.active_object.SelectedStairSectionIndex -= 1
+        elif self.action == 'REMOVE':
+            if context.active_object.SelectedStairSectionIndex > 0:
                 context.active_object.SelectedStairSectionIndex -= 1
-
-            elif self.action == 'REMOVE':
-                if context.active_object.SelectedStairSectionIndex > 0:
-                    context.active_object.SelectedStairSectionIndex -= 1
-                context.active_object.StairSectionList.remove(current_index)
-
-            elif self.action == 'ADD':
-                context.active_object.StairSectionList.add()
+            context.active_object.StairSectionList.remove(current_index)
+        elif self.action == 'ADD':
+            context.active_object.StairSectionList.add()
         
         return {"FINISHED"}
 
@@ -98,12 +89,14 @@ class ApplyStairSectionProperties(bpy.types.Operator):
 
     def invoke(self, context, event):
         obj = context.active_object
+        obj.StairSectionList[obj.SelectedStairSectionIndex].StairSectionName = obj.StairSectionName
         obj.StairSectionList[obj.SelectedStairSectionIndex].StairStepHeight = obj.StairStepHeight
         obj.StairSectionList[obj.SelectedStairSectionIndex].StairStepWidth = obj.StairStepWidth
         obj.StairSectionList[obj.SelectedStairSectionIndex].StairStepDepth = obj.StairStepDepth
         obj.StairSectionList[obj.SelectedStairSectionIndex].StairStepCount = obj.StairStepCount
         obj.StairSectionList[obj.SelectedStairSectionIndex].StairSectionNextDirection = obj.StairSectionNextDirection
         obj.UnappliedProperties = False
+        bpy.ops.object.build_stairs(name=context.scene.LevelName + '.' + context.active_object.name)
         return {"FINISHED"}
 
 class BuildStairs(bpy.types.Operator):
@@ -118,6 +111,14 @@ class BuildStairs(bpy.types.Operator):
 
     def execute(self, context):
         obj = context.active_object
+
+        #Delete previous stairs
+        if context.scene.objects.find(self.name) != -1:
+            previous_obj = context.scene.objects[self.name]
+            bpy.ops.object.select_all(action='DESELECT')
+            previous_obj.select = True
+            bpy.ops.object.delete()
+
         step_build_point = obj.location
         build_direction = '+Y'
         sections = []
@@ -201,7 +202,13 @@ class BuildStairs(bpy.types.Operator):
         bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
         context.scene.cursor_location = cursor_location
 
-        context.active_object.rotation_euler = obj.rotation_euler   
+        context.active_object.rotation_euler = obj.rotation_euler
+
+        # Select Stairs object
+        bpy.ops.object.unwrap_object(target_name=context.active_object.name)
+        bpy.ops.object.material_slot_add()
+        context.active_object.material_slots[0].material = bpy.data.materials[obj.StairMaterial]
+        context.active_object.ExportObject = True
 
         return {"FINISHED"}
 
@@ -276,6 +283,12 @@ class Stairs():
                 ('-Y', "-Y", ""),
             ),
             default="+Y"
+        )
+
+        bpy.types.Object.StairMaterial = bpy.props.StringProperty(
+            name="Stair Material",
+            description="Stair Material",
+            default="Material"
         )
 
         bpy.types.Object.UnappliedProperties = bpy.props.BoolProperty(

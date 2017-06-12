@@ -303,6 +303,28 @@ class ExportLevel(bpy.types.Operator):
         
         return {"FINISHED"}
 
+class UnwrapObject(bpy.types.Operator):
+    bl_idname = "object.unwrap_object"
+    bl_label = "Unwrap Object"
+
+    target_name = bpy.props.StringProperty(
+        name="Target Name",
+        description="Name of the object to unwrap",
+        default=""
+    )
+
+    def execute(self, context):
+        bpy.ops.object.mode_set(mode = 'OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.data.objects[self.target_name].select = True
+        context.scene.objects.active = bpy.data.objects[self.target_name]
+        bpy.ops.object.mode_set(mode = 'EDIT') 
+        bpy.ops.mesh.select_mode(type='VERT')
+        bpy.ops.mesh.select_all(action = 'SELECT')
+        bpy.ops.uv.cube_project(cube_size=0.5)
+        bpy.ops.object.mode_set(mode = 'OBJECT')
+        return {"FINISHED"}
+
 class Level(bpy.types.Panel):
     bl_label = 'Level'
     bl_idname = 'ui.level'
@@ -329,6 +351,7 @@ class Level(bpy.types.Panel):
         bpy.utils.register_class(BuildLevel)
         bpy.utils.register_class(DeleteLevel)
         bpy.utils.register_class(ExportLevel)
+        bpy.utils.register_class(UnwrapObject)
 
         bpy.types.Scene.LevelName = bpy.props.StringProperty(
             name="Level Name",
@@ -347,4 +370,5 @@ class Level(bpy.types.Panel):
         bpy.utils.unregister_class(BuildLevel)
         bpy.utils.unregister_class(DeleteLevel)
         bpy.utils.unregister_class(ExportLevel)
+        bpy.utils.unregister_class(UnwrapObject)
         del sys.modules['LevelEditor.level']

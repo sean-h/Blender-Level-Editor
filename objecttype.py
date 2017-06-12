@@ -140,6 +140,7 @@ class LevelPropertiesMenu(bpy.types.Panel):
             elif active_object.ObjectType == 'Stairs':
                 col = layout.column(align=True)
                 col.alert = active_object.UnappliedProperties
+                col.prop(active_object, "StairSectionName", text="Section Name")
                 col.prop(active_object, "StairStepHeight", text="Step Height")
                 col.prop(active_object, "StairStepWidth", text="Step Width")
                 col.prop(active_object, "StairStepDepth", text="Step Depth")
@@ -155,6 +156,8 @@ class LevelPropertiesMenu(bpy.types.Panel):
                 col.separator()
                 col.operator("object.stair_section_list_action", icon='TRIA_UP', text="").action = 'UP'
                 col.operator("object.stair_section_list_action", icon='TRIA_DOWN', text="").action = 'DOWN'
+
+                layout.prop_search(active_object, "StairMaterial", bpy.data, "materials")
         
     def register():
         Prefab.register()
