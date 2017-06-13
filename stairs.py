@@ -2,6 +2,7 @@ import bpy
 import sys
 import pdb
 import math
+import bmesh
 from mathutils import Vector
 
 class StairSectionList(bpy.types.UIList):
@@ -16,6 +17,14 @@ class StairSectionPropertyGroup(bpy.types.PropertyGroup):
         name="Stair Section Name",
         description="Section Name",
         default="Section"
+    )
+
+    StairBuildType = bpy.props.EnumProperty(
+        items=(
+            ("IndividualStairSize", "IndividualStairSize", "IndividualStairSize"),
+            ("TotalSectionSize", "TotalSectionSize", "TotalSectionSize")
+        ),
+        default="IndividualStairSize"
     )
 
     StairStepHeight = bpy.props.FloatProperty(
@@ -40,6 +49,18 @@ class StairSectionPropertyGroup(bpy.types.PropertyGroup):
         name="Stair Step Count",
         default = 5,
         step=5
+    )
+
+    StairSectionHeight = bpy.props.FloatProperty(
+        name="Stair Section Height",
+        default = 2,
+        step=1
+    )
+
+    StairSectionDepth = bpy.props.FloatProperty(
+        name="Stair Section Depth",
+        default = 2,
+        step=1
     )
 
     StairSectionNextDirection = bpy.props.EnumProperty(
@@ -90,11 +111,20 @@ class ApplyStairSectionProperties(bpy.types.Operator):
     def invoke(self, context, event):
         obj = context.active_object
         obj.StairSectionList[obj.SelectedStairSectionIndex].StairSectionName = obj.StairSectionName
-        obj.StairSectionList[obj.SelectedStairSectionIndex].StairStepHeight = obj.StairStepHeight
-        obj.StairSectionList[obj.SelectedStairSectionIndex].StairStepWidth = obj.StairStepWidth
-        obj.StairSectionList[obj.SelectedStairSectionIndex].StairStepDepth = obj.StairStepDepth
         obj.StairSectionList[obj.SelectedStairSectionIndex].StairStepCount = obj.StairStepCount
         obj.StairSectionList[obj.SelectedStairSectionIndex].StairSectionNextDirection = obj.StairSectionNextDirection
+        obj.StairSectionList[obj.SelectedStairSectionIndex].StairStepWidth = obj.StairStepWidth
+        obj.StairSectionList[obj.SelectedStairSectionIndex].StairBuildType = obj.StairBuildType
+
+        if obj.StairBuildType == 'IndividualStairSize':
+            obj.StairSectionList[obj.SelectedStairSectionIndex].StairStepHeight = obj.StairStepHeight
+            obj.StairSectionList[obj.SelectedStairSectionIndex].StairStepDepth = obj.StairStepDepth
+        elif obj.StairBuildType == 'TotalSectionSize':
+            obj.StairSectionList[obj.SelectedStairSectionIndex].StairSectionHeight = obj.StairSectionHeight
+            obj.StairSectionList[obj.SelectedStairSectionIndex].StairSectionDepth = obj.StairSectionDepth
+            obj.StairSectionList[obj.SelectedStairSectionIndex].StairStepHeight = obj.StairSectionHeight / obj.StairStepCount
+            obj.StairSectionList[obj.SelectedStairSectionIndex].StairStepDepth = obj.StairSectionDepth / obj.StairStepCount
+
         obj.UnappliedProperties = False
         bpy.ops.object.build_stairs(name=context.scene.LevelName + '.' + context.active_object.name)
         return {"FINISHED"}
@@ -116,7 +146,8 @@ class BuildStairs(bpy.types.Operator):
         if context.scene.objects.find(self.name) != -1:
             previous_obj = context.scene.objects[self.name]
             bpy.ops.object.select_all(action='DESELECT')
-            previous_obj.select = True
+            #previous_obj.select = True
+            bpy.ops.object.select_pattern(pattern=self.name + '*')
             bpy.ops.object.delete()
 
         step_build_point = obj.location
@@ -177,6 +208,30 @@ class BuildStairs(bpy.types.Operator):
 
             sections.append(context.active_object)
 
+            #Build clip brush
+            section_height = section.StairStepHeight * section.StairStepCount
+            section_length = y * section.StairStepCount
+
+            bpy.ops.object.add(location=obj.location, type='MESH')
+            clip_object = context.active_object
+            
+            bpy.ops.object.mode_set(mode='EDIT')
+            bm = bmesh.from_edit_mesh(clip_object.data)
+            bm.verts.new(Vector((-x / 2.0, 0.0, 0.0)))
+            bm.verts.new(Vector((x / 2.0, 0.0, 0.0)))
+            bm.verts.new(Vector((x / 2.0, section_length, section_height)))
+            bm.verts.new(Vector((-x / 2.0, section_length, section_height)))
+            bm.verts.ensure_lookup_table()
+            bm.faces.new((bm.verts[i] for i in range(-4,0)))
+            bpy.ops.object.mode_set(mode='OBJECT')
+            
+
+            clip_object.ObjectType = 'Brush'
+            clip_object.BrushType = 'Clip'
+            clip_object.BrushPhysicsMaterial = 'Stairs'
+            clip_object.name = self.name + '.' + section.StairSectionName + '.' + 'Clip'
+
+
             build_direction = section.StairSectionNextDirection
             
             if build_direction == '+X':
@@ -188,10 +243,11 @@ class BuildStairs(bpy.types.Operator):
             elif build_direction == '-Y':
                 step_build_point = step_build_point + Vector((0.0, -y / 2.0, 0.0))
 
-
         
+        bpy.ops.object.select_all(action='DESELECT')
         for section in sections:
             section.select=True
+            context.scene.objects.active = section
 
         bpy.ops.object.join()
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
@@ -203,12 +259,18 @@ class BuildStairs(bpy.types.Operator):
         context.scene.cursor_location = cursor_location
 
         context.active_object.rotation_euler = obj.rotation_euler
+        # Rotate clip brushes
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.ops.object.select_pattern(pattern=self.name + '.' + '*')
+        for o in context.scene.objects:
+            if o.select:
+                o.rotation_euler = obj.rotation_euler
 
-        # Select Stairs object
         bpy.ops.object.unwrap_object(target_name=context.active_object.name)
         bpy.ops.object.material_slot_add()
         context.active_object.material_slots[0].material = bpy.data.materials[obj.StairMaterial]
         context.active_object.ExportObject = True
+        context.active_object.ColliderEnabled = False
 
         return {"FINISHED"}
 
@@ -216,10 +278,13 @@ class Stairs():
 
     def on_selected_stair_section_index_changed(self, context):
         self.StairSectionName = self.StairSectionList[self.SelectedStairSectionIndex].StairSectionName
-        self.StairStepHeight = self.StairSectionList[self.SelectedStairSectionIndex].StairStepHeight
         self.StairStepWidth = self.StairSectionList[self.SelectedStairSectionIndex].StairStepWidth
-        self.StairStepDepth = self.StairSectionList[self.SelectedStairSectionIndex].StairStepDepth
         self.StairStepCount = self.StairSectionList[self.SelectedStairSectionIndex].StairStepCount
+        self.StairBuildType = self.StairSectionList[self.SelectedStairSectionIndex].StairBuildType
+        self.StairStepHeight = self.StairSectionList[self.SelectedStairSectionIndex].StairStepHeight
+        self.StairStepDepth = self.StairSectionList[self.SelectedStairSectionIndex].StairStepDepth
+        self.StairSectionHeight = self.StairSectionList[self.SelectedStairSectionIndex].StairSectionHeight
+        self.StairSectionDepth = self.StairSectionList[self.SelectedStairSectionIndex].StairSectionDepth
         self.StairSectionNextDirection = self.StairSectionList[self.SelectedStairSectionIndex].StairSectionNextDirection
 
     def on_property_changed(self, context):
@@ -245,6 +310,14 @@ class Stairs():
             description="Section Name",
             default="Section",
             update=Stairs.on_property_changed
+        )
+
+        bpy.types.Object.StairBuildType = bpy.props.EnumProperty(
+            items=(
+                ("IndividualStairSize", "IndividualStairSize", "IndividualStairSize"),
+                ("TotalSectionSize", "TotalSectionSize", "TotalSectionSize")
+            ),
+            default="IndividualStairSize"
         )
 
         bpy.types.Object.StairStepHeight = bpy.props.FloatProperty(
@@ -273,6 +346,18 @@ class Stairs():
             default = 5,
             step=5,
             update=Stairs.on_property_changed
+        )
+
+        bpy.types.Object.StairSectionHeight = bpy.props.FloatProperty(
+            name="Stair Section Height",
+            default = 2,
+            step=1
+        )
+
+        bpy.types.Object.StairSectionDepth = bpy.props.FloatProperty(
+            name="Stair Section Depth",
+            default = 2,
+            step=1
         )
 
         bpy.types.Object.StairSectionNextDirection = bpy.props.EnumProperty(

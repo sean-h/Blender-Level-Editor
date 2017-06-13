@@ -281,7 +281,7 @@ class ExportLevel(bpy.types.Operator):
 
         bpy.ops.object.select_pattern(pattern="*")
         for obj in bpy.context.selected_objects:
-            if obj.ExportObject == False or (obj.BrushType != 'None' and obj.BrushType != 'Mesh'):
+            if obj.ExportObject == False or (obj.BrushType != 'None' and obj.BrushType != 'Mesh' and obj.BrushType != 'Clip'):
                 bpy.data.objects[obj.name].select = False
         
         bpy.ops.export_scene.fbx(
