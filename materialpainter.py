@@ -1,4 +1,5 @@
 import bpy
+import bpy.utils.previews
 import json
 import os
 import sys
