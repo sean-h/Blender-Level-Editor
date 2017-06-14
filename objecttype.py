@@ -160,9 +160,9 @@ class LevelPropertiesMenu(bpy.types.Panel):
                     col.prop(active_object, "StairSectionHeight", text="Section Height")
                     col.prop(active_object, "StairSectionDepth", text="Section Depth")
                     col.prop(active_object, "StairStepCount", text="Step Count")
+
                     col.prop(active_object, "StairSectionNextDirection", text="Next Section Direction")
                     col.operator("object.apply_stair_section_properties", icon='ZOOMOUT', text="Apply")
-
 
                 row = layout.row()
                 row.template_list("StairSectionList", "", active_object, "StairSectionList", active_object, "SelectedStairSectionIndex")

@@ -146,7 +146,6 @@ class BuildStairs(bpy.types.Operator):
         if context.scene.objects.find(self.name) != -1:
             previous_obj = context.scene.objects[self.name]
             bpy.ops.object.select_all(action='DESELECT')
-            #previous_obj.select = True
             bpy.ops.object.select_pattern(pattern=self.name + '*')
             bpy.ops.object.delete()
 
@@ -156,6 +155,8 @@ class BuildStairs(bpy.types.Operator):
         for section in obj.StairSectionList:
             steps = []
             section_origin = step_build_point
+            if section.StairStepCount == 1:
+                step_build_point = step_build_point - Vector((0.0, 0.0, z))
 
             x = section.StairStepWidth 
             y = section.StairStepDepth
@@ -210,6 +211,9 @@ class BuildStairs(bpy.types.Operator):
 
             #Build clip brush
             section_height = section.StairStepHeight * section.StairStepCount
+            if section.StairStepCount == 1:
+                section_height = 0.0
+
             section_length = y * section.StairStepCount
 
             bpy.ops.object.add(location=obj.location, type='MESH')
@@ -217,12 +221,26 @@ class BuildStairs(bpy.types.Operator):
             
             bpy.ops.object.mode_set(mode='EDIT')
             bm = bmesh.from_edit_mesh(clip_object.data)
-            bm.verts.new(Vector((-x / 2.0, 0.0, 0.0)))
-            bm.verts.new(Vector((x / 2.0, 0.0, 0.0)))
-            bm.verts.new(Vector((x / 2.0, section_length, section_height)))
-            bm.verts.new(Vector((-x / 2.0, section_length, section_height)))
+            # Top vertices
+            bm.verts.new(Vector((-x / 2.0, 0.0, 0.0)) + section_origin)
+            bm.verts.new(Vector((x / 2.0, 0.0, 0.0)) + section_origin)
+            bm.verts.new(Vector((x / 2.0, section_length, section_height)) + section_origin)
+            bm.verts.new(Vector((-x / 2.0, section_length, section_height)) + section_origin)
+
+            # Bottom vertices
+            bm.verts.new(Vector((-x / 2.0, section_length, section_height - section.StairStepHeight)) + section_origin)
+            bm.verts.new(Vector((x / 2.0, section_length, section_height - section.StairStepHeight)) + section_origin)
+            bm.verts.new(Vector((x / 2.0, 0.0, -section.StairStepHeight)) + section_origin)
+            bm.verts.new(Vector((-x / 2.0, 0.0, -section.StairStepHeight)) + section_origin)
+
             bm.verts.ensure_lookup_table()
-            bm.faces.new((bm.verts[i] for i in range(-4,0)))
+            bm.faces.new((bm.verts[i] for i in [0,1,2,3]))
+            bm.faces.new((bm.verts[i] for i in [4,5,6,7]))
+            bm.faces.new((bm.verts[i] for i in [3,4,7,0]))
+            bm.faces.new((bm.verts[i] for i in [0,7,6,1]))
+            bm.faces.new((bm.verts[i] for i in [1,6,5,2]))
+            bm.faces.new((bm.verts[i] for i in [2,5,4,3]))
+
             bpy.ops.object.mode_set(mode='OBJECT')
             
 
