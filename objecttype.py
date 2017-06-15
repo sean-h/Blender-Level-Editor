@@ -146,23 +146,28 @@ class LevelPropertiesMenu(bpy.types.Panel):
             elif active_object.ObjectType == 'Stairs':
                 col = layout.column(align=True)
                 col.alert = active_object.UnappliedProperties
-                col.prop(active_object, "StairSectionName", text="Section Name")
-                col.prop(active_object, "StairBuildType", text="Build Type")
 
-                if active_object.StairBuildType == 'IndividualStairSize':
-                    col.prop(active_object, "StairStepHeight", text="Step Height")
-                    col.prop(active_object, "StairStepWidth", text="Step Width")
-                    col.prop(active_object, "StairStepDepth", text="Step Depth")
-                    col.prop(active_object, "StairStepCount", text="Step Count")
-                    col.prop(active_object, "StairSectionNextDirection", text="Next Section Direction")
-                    col.operator("object.apply_stair_section_properties", icon='ZOOMOUT', text="Apply")
-                elif active_object.StairBuildType == 'TotalSectionSize':
-                    col.prop(active_object, "StairSectionHeight", text="Section Height")
-                    col.prop(active_object, "StairSectionDepth", text="Section Depth")
-                    col.prop(active_object, "StairStepCount", text="Step Count")
+                if len(active_object.StairSectionList) == 0:
+                    col.label(text="Create Stair Section", icon="ERROR")
+                    col.alert = True
+                else:
+                    col.prop(active_object, "StairSectionName", text="Section Name")
+                    col.prop(active_object, "StairBuildType", text="Build Type")
 
-                    col.prop(active_object, "StairSectionNextDirection", text="Next Section Direction")
-                    col.operator("object.apply_stair_section_properties", icon='ZOOMOUT', text="Apply")
+                    if active_object.StairBuildType == 'IndividualStairSize':
+                        col.prop(active_object, "StairStepHeight", text="Step Height")
+                        col.prop(active_object, "StairStepWidth", text="Step Width")
+                        col.prop(active_object, "StairStepDepth", text="Step Depth")
+                        col.prop(active_object, "StairStepCount", text="Step Count")
+                        col.prop(active_object, "StairSectionNextDirection", text="Next Section Direction")
+                        col.operator("object.apply_stair_section_properties", icon='ZOOMOUT', text="Apply")
+                    elif active_object.StairBuildType == 'TotalSectionSize':
+                        col.prop(active_object, "StairSectionHeight", text="Section Height")
+                        col.prop(active_object, "StairSectionDepth", text="Section Depth")
+                        col.prop(active_object, "StairStepCount", text="Step Count")
+
+                        col.prop(active_object, "StairSectionNextDirection", text="Next Section Direction")
+                        col.operator("object.apply_stair_section_properties", icon='ZOOMOUT', text="Apply")
 
                 row = layout.row()
                 row.template_list("StairSectionList", "", active_object, "StairSectionList", active_object, "SelectedStairSectionIndex")
