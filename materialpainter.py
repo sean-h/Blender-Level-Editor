@@ -3,40 +3,43 @@ import bpy.utils.previews
 import json
 import os
 import sys
+from .leveleditorconfig import material_list_path
 
 class ImportMaterials(bpy.types.Operator):
     bl_idname = "scene.import_materials"
     bl_label = "Import Materials"
 
     def execute(self, context):
-        material_file = open('F:/Unity Projects/Materials/MaterialList.json', 'r')
-        data = json.load(material_file)
+        material_file_path = material_list_path()
+        if os.path.isfile(material_file_path):
+            material_file = open(material_file_path, 'r')
+            data = json.load(material_file)
 
-        for material in data['MaterialNames']:
-            if material['MaterialName'] not in bpy.data.materials.keys():
-                bpy.data.materials.new(material['MaterialName'])
+            for material in data['MaterialNames']:
+                if material['MaterialName'] not in bpy.data.materials.keys():
+                    bpy.data.materials.new(material['MaterialName'])
+                    
+                if len(bpy.data.materials[material['MaterialName']].texture_slots.keys()) == 0:
+                    bpy.data.materials[material['MaterialName']].texture_slots.add()
                 
-            if len(bpy.data.materials[material['MaterialName']].texture_slots.keys()) == 0:
-                bpy.data.materials[material['MaterialName']].texture_slots.add()
-            
-            try:
-                image = bpy.data.images.load(material['TexturePath'], check_existing=True)
-                image.reload()
-            except:
-                print('Could not load image: ' + material['TexturePath'])
-            
-            if material['MaterialName'] not in bpy.data.textures.keys():
-                texture = bpy.data.textures.new(material['MaterialName'], 'IMAGE')
+                try:
+                    image = bpy.data.images.load(material['TexturePath'], check_existing=True)
+                    image.reload()
+                except:
+                    print('Could not load image: ' + material['TexturePath'])
                 
-            image_dir, image_name = os.path.split(material['TexturePath'])
-            texture = bpy.data.textures[material['MaterialName']]
-            try:
-                texture.image = bpy.data.images[image_name]
-                texture_slot = bpy.data.materials[material['MaterialName']].texture_slots.keys()[0]
-                slot = bpy.data.materials[material['MaterialName']].texture_slots[texture_slot]
-                slot.texture = bpy.data.textures[material['MaterialName']]
-            except:
-                print('Could not load image: ' + material['TexturePath'])
+                if material['MaterialName'] not in bpy.data.textures.keys():
+                    texture = bpy.data.textures.new(material['MaterialName'], 'IMAGE')
+                    
+                image_dir, image_name = os.path.split(material['TexturePath'])
+                texture = bpy.data.textures[material['MaterialName']]
+                try:
+                    texture.image = bpy.data.images[image_name]
+                    texture_slot = bpy.data.materials[material['MaterialName']].texture_slots.keys()[0]
+                    slot = bpy.data.materials[material['MaterialName']].texture_slots[texture_slot]
+                    slot.texture = bpy.data.textures[material['MaterialName']]
+                except:
+                    print('Could not load image: ' + material['TexturePath'])
 
         return {'FINISHED'}
 
@@ -128,17 +131,18 @@ class MaterialPainter(bpy.types.Panel):
 
         material_items = []
 
+        material_file_path = material_list_path()
+        if os.path.isfile(material_file_path):
+            material_file = open(material_file_path, 'r')
+            data = json.load(material_file)
 
-        material_file = open('F:/Unity Projects/Materials/MaterialList.json', 'r')
-        data = json.load(material_file)
+            for i, material in enumerate(data['MaterialNames']):
+                thumb = material_previews.load(material['TexturePath'], material['TexturePath'], 'IMAGE')
+                material_items.append((material['MaterialName'], material['MaterialName'], "", thumb.icon_id, i))
 
-        for i, material in enumerate(data['MaterialNames']):
-            thumb = material_previews.load(material['TexturePath'], material['TexturePath'], 'IMAGE')
-            material_items.append((material['MaterialName'], material['MaterialName'], "", thumb.icon_id, i))
-
-        bpy.types.Scene.material_selector = bpy.props.EnumProperty(
-            items=material_items
-        )
+            bpy.types.Scene.material_selector = bpy.props.EnumProperty(
+                items=material_items
+            )
 
     def unregister():
         bpy.utils.unregister_class(ImportMaterials)

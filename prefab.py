@@ -4,6 +4,7 @@ import os, sys
 import copy
 import math
 import pdb
+from .leveleditorconfig import prefab_list_path
 
 class MeshPropertyGroup(bpy.types.PropertyGroup):
     mesh_path = bpy.props.StringProperty(name="MeshPath", description="")
@@ -128,41 +129,43 @@ class CreatePrefabs(bpy.types.Operator):
     bl_label = "Minimal Operator"
 
     def execute(self, context):
-        bpy.context.scene.Prefabs.clear()
-        prefab_file = open('F:/Unity Projects/ArenaFPSExportData/Prefabs.json', 'r')
-        data = json.load(prefab_file)
-        
-        for p in data["Prefabs"]:
-            prefab = bpy.context.scene.Prefabs.add()
-            prefab.name = p["PrefabName"]
-            prefab.model = p["MeshPath"]
-            prefab.models = ""      
+        prefab_file_path = prefab_list_path()
+        if os.path.isfile(prefab_file_path):
+            bpy.context.scene.Prefabs.clear()
+            prefab_file = open(prefab_file_path, 'r')
+            data = json.load(prefab_file)
             
-            prefab.meshes.clear()
-            for mesh in p["Meshes"]:
-                m = prefab.meshes.add()
-                m.mesh_path = mesh["MeshPath"]
-                m.xPos = mesh["xPos"]
-                m.yPos = mesh["yPos"]
-                m.zPos = mesh["zPos"]
+            for p in data["Prefabs"]:
+                prefab = bpy.context.scene.Prefabs.add()
+                prefab.name = p["PrefabName"]
+                prefab.model = p["MeshPath"]
+                prefab.models = ""      
                 
-                m.xRot = mesh["xRot"]
-                m.yRot = mesh["yRot"]
-                m.zRot = mesh["zRot"]
-                
-                m.assetXRot = mesh["assetXRot"]
-                m.assetYRot = mesh["assetYRot"]
-                m.assetZRot = mesh["assetZRot"]
-                
-                m.xScale = mesh["xScale"]
-                m.yScale = mesh["yScale"]
-                m.zScale = mesh["zScale"]
+                prefab.meshes.clear()
+                for mesh in p["Meshes"]:
+                    m = prefab.meshes.add()
+                    m.mesh_path = mesh["MeshPath"]
+                    m.xPos = mesh["xPos"]
+                    m.yPos = mesh["yPos"]
+                    m.zPos = mesh["zPos"]
+                    
+                    m.xRot = mesh["xRot"]
+                    m.yRot = mesh["yRot"]
+                    m.zRot = mesh["zRot"]
+                    
+                    m.assetXRot = mesh["assetXRot"]
+                    m.assetYRot = mesh["assetYRot"]
+                    m.assetZRot = mesh["assetZRot"]
+                    
+                    m.xScale = mesh["xScale"]
+                    m.yScale = mesh["yScale"]
+                    m.zScale = mesh["zScale"]
 
-            for model in p["MeshPaths"]:
-                if prefab.models == "":
-                    prefab.models = model
-                else:
-                    prefab.models = prefab.models + ";" + model
+                for model in p["MeshPaths"]:
+                    if prefab.models == "":
+                        prefab.models = model
+                    else:
+                        prefab.models = prefab.models + ";" + model
 
         return {'FINISHED'}
 

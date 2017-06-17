@@ -325,6 +325,23 @@ class UnwrapObject(bpy.types.Operator):
         bpy.ops.object.mode_set(mode = 'OBJECT')
         return {"FINISHED"}
 
+class ValidateLevel(bpy.types.Operator):
+    bl_idname = "scene.validate_level"
+    bl_label = "Build Level"
+
+    def execute(self, context):
+        output = ""
+
+        if bpy.data.texts.find('ValidationOutput') == -1:
+            bpy.data.texts.new('ValidationOutput')
+        else:
+            bpy.data.texts['ValidationOutput'].clear()
+
+        output += "Hello"
+
+        bpy.data.texts['ValidationOutput'].write(output)
+        return {"FINISHED"}
+
 class Level(bpy.types.Panel):
     bl_label = 'Level'
     bl_idname = 'ui.level'
@@ -352,6 +369,7 @@ class Level(bpy.types.Panel):
         bpy.utils.register_class(DeleteLevel)
         bpy.utils.register_class(ExportLevel)
         bpy.utils.register_class(UnwrapObject)
+        bpy.utils.register_class(ValidateLevel)
 
         bpy.types.Scene.LevelName = bpy.props.StringProperty(
             name="Level Name",
@@ -371,4 +389,5 @@ class Level(bpy.types.Panel):
         bpy.utils.unregister_class(DeleteLevel)
         bpy.utils.unregister_class(ExportLevel)
         bpy.utils.unregister_class(UnwrapObject)
+        bpy.utils.unregister_class(ValidateLevel)
         del sys.modules['LevelEditor.level']
