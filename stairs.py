@@ -222,16 +222,16 @@ class BuildStairs(bpy.types.Operator):
             bpy.ops.object.mode_set(mode='EDIT')
             bm = bmesh.from_edit_mesh(clip_object.data)
             # Top vertices
-            bm.verts.new(Vector((-x / 2.0, 0.0, 0.0)) + section_origin)
-            bm.verts.new(Vector((x / 2.0, 0.0, 0.0)) + section_origin)
-            bm.verts.new(Vector((x / 2.0, section_length, section_height)) + section_origin)
-            bm.verts.new(Vector((-x / 2.0, section_length, section_height)) + section_origin)
+            bm.verts.new(Vector((-x / 2.0, 0.0, 0.0)))
+            bm.verts.new(Vector((x / 2.0, 0.0, 0.0)))
+            bm.verts.new(Vector((x / 2.0, section_length, section_height)))
+            bm.verts.new(Vector((-x / 2.0, section_length, section_height)))
 
             # Bottom vertices
-            bm.verts.new(Vector((-x / 2.0, section_length, section_height - section.StairStepHeight)) + section_origin)
-            bm.verts.new(Vector((x / 2.0, section_length, section_height - section.StairStepHeight)) + section_origin)
-            bm.verts.new(Vector((x / 2.0, 0.0, -section.StairStepHeight)) + section_origin)
-            bm.verts.new(Vector((-x / 2.0, 0.0, -section.StairStepHeight)) + section_origin)
+            bm.verts.new(Vector((-x / 2.0, section_length, section_height - section.StairStepHeight)))
+            bm.verts.new(Vector((x / 2.0, section_length, section_height - section.StairStepHeight)))
+            bm.verts.new(Vector((x / 2.0, 0.0, -section.StairStepHeight)))
+            bm.verts.new(Vector((-x / 2.0, 0.0, -section.StairStepHeight)))
 
             bm.verts.ensure_lookup_table()
             bm.faces.new((bm.verts[i] for i in [0,1,2,3]))
