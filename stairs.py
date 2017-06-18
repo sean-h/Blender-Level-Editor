@@ -214,7 +214,18 @@ class BuildStairs(bpy.types.Operator):
             if section.StairStepCount == 1:
                 section_height = 0.0
 
-            section_length = y * section.StairStepCount
+            section_x = x
+            section_y = y
+
+            if build_direction == '+X':
+                section_x *= section.StairStepCount
+            elif build_direction == '-X':
+                section_x *= -section.StairStepCount
+            elif build_direction == '+Y':
+                section_y *= section.StairStepCount
+            elif build_direction == '-Y':
+                section_y *= -section.StairStepCount
+
 
             bpy.ops.object.add(location=obj.location, type='MESH')
             clip_object = context.active_object
@@ -224,17 +235,30 @@ class BuildStairs(bpy.types.Operator):
 
             relative_sector_location = section_origin - obj.location
 
-            # Top vertices
-            bm.verts.new(Vector((-x / 2.0, 0.0, 0.0)) + relative_sector_location)
-            bm.verts.new(Vector((x / 2.0, 0.0, 0.0)) + relative_sector_location)
-            bm.verts.new(Vector((x / 2.0, section_length, section_height)) + relative_sector_location)
-            bm.verts.new(Vector((-x / 2.0, section_length, section_height)) + relative_sector_location)
+            if build_direction == '+Y' or build_direction == '-Y':
+                # Top vertices
+                bm.verts.new(Vector((-section_x / 2.0, 0.0, 0.0)) + relative_sector_location)
+                bm.verts.new(Vector((section_x / 2.0, 0.0, 0.0)) + relative_sector_location)
+                bm.verts.new(Vector((section_x / 2.0, section_y, section_height)) + relative_sector_location)
+                bm.verts.new(Vector((-section_x / 2.0, section_y, section_height)) + relative_sector_location)
 
-            # Bottom vertices
-            bm.verts.new(Vector((-x / 2.0, section_length, section_height - section.StairStepHeight)) + relative_sector_location)
-            bm.verts.new(Vector((x / 2.0, section_length, section_height - section.StairStepHeight)) + relative_sector_location)
-            bm.verts.new(Vector((x / 2.0, 0.0, -section.StairStepHeight)) + relative_sector_location)
-            bm.verts.new(Vector((-x / 2.0, 0.0, -section.StairStepHeight)) + relative_sector_location)
+                # Bottom vertices
+                bm.verts.new(Vector((-section_x / 2.0, section_y, section_height - section.StairStepHeight)) + relative_sector_location)
+                bm.verts.new(Vector((section_x / 2.0, section_y, section_height - section.StairStepHeight)) + relative_sector_location)
+                bm.verts.new(Vector((section_x / 2.0, 0.0, -section.StairStepHeight)) + relative_sector_location)
+                bm.verts.new(Vector((-section_x / 2.0, 0.0, -section.StairStepHeight)) + relative_sector_location)
+            else:
+                # Top vertices
+                bm.verts.new(Vector((0.0, -section_y / 2.0, 0.0)) + relative_sector_location)
+                bm.verts.new(Vector((0.0, section_y / 2.0, 0.0)) + relative_sector_location)
+                bm.verts.new(Vector((section_x, section_y / 2.0, section_height)) + relative_sector_location)
+                bm.verts.new(Vector((section_x, -section_y / 2.0, section_height)) + relative_sector_location)
+
+                # Bottom vertices
+                bm.verts.new(Vector((section_x, -section_y / 2.0, section_height - section.StairStepHeight)) + relative_sector_location)
+                bm.verts.new(Vector((section_x, section_y / 2.0, section_height - section.StairStepHeight)) + relative_sector_location)
+                bm.verts.new(Vector((0.0, section_y / 2.0, -section.StairStepHeight)) + relative_sector_location)
+                bm.verts.new(Vector((0.0, -section_y / 2.0, -section.StairStepHeight)) + relative_sector_location)
 
             bm.verts.ensure_lookup_table()
             bm.faces.new((bm.verts[i] for i in [0,1,2,3]))
