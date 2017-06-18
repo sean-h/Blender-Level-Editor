@@ -290,6 +290,10 @@ class BuildStairs(bpy.types.Operator):
         context.active_object.ExportObject = True
         context.active_object.ColliderEnabled = False
 
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select = True
+        context.scene.objects.active = obj
+
         return {"FINISHED"}
 
 class Stairs():
